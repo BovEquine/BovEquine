@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACARiS — AI-powered animal health monitoring</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a0d12;
+      color: #e2e8f0;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+
+    /* ── Design tokens ────────────────────────────────── */
+    :root {
+      --accent:      #3b82f6;
+      --accent-dim:  #1d4ed8;
+      --accent-glow: rgba(59,130,246,.18);
+      --surface:     #111827;
+      --surface2:    #1a2235;
+      --surface3:    #1f2d44;
+      --border:      rgba(255,255,255,.07);
+      --text-muted:  #6b7280;
+      --text-soft:   #94a3b8;
+      --radius-lg:   1.25rem;
+      --radius-md:   .75rem;
+      --radius-sm:   .5rem;
+      --max-w:       1200px;
+      --section-gap: 7rem;
+    }
+
+    /* ── Utility ──────────────────────────────────────── */
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; }
+    .tag {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--accent); background: var(--accent-glow);
+      border: 1px solid rgba(59,130,246,.3); border-radius: 2rem;
+      padding: .3rem .85rem;
+    }
+    .tag::before { content: '●'; font-size: .55rem; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: var(--accent); color: #fff;
+      font-size: .9rem; font-weight: 600;
+      padding: .8rem 1.8rem; border-radius: var(--radius-md);
+      border: none; cursor: pointer; transition: background .2s, transform .15s;
+    }
+    .btn-primary:hover { background: var(--accent-dim); transform: translateY(-1px); }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: transparent; color: var(--text-soft);
+      font-size: .9rem; font-weight: 500;
+      padding: .8rem 1.8rem; border-radius: var(--radius-md);
+      border: 1px solid var(--border); cursor: pointer;
+      transition: border-color .2s, color .2s, transform .15s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+    .section { padding: var(--section-gap) 0; }
+    .section-header { margin-bottom: 3rem; }
+    .section-header h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 700; line-height: 1.25; margin-top: .75rem; }
+    .section-header p { color: var(--text-soft); margin-top: .75rem; max-width: 560px; }
+
+    /* ── Nav ──────────────────────────────────────────── */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1.25rem 0;
+      background: rgba(10,13,18,.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      transition: background .3s;
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem;
+    }
+    .nav-brand { display: flex; align-items: center; gap: .75rem; }
+    .nav-logo {
+      width: 2.2rem; height: 2.2rem; border-radius: var(--radius-sm);
+      background: var(--accent); display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 800; color: #fff; letter-spacing: -.02em;
+    }
+    .nav-brand-text small { display: block; font-size: .65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; }
+    .nav-brand-text strong { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { font-size: .875rem; color: var(--text-soft); font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: #fff; }
+    .nav-cta { display: flex; gap: .75rem; }
+    @media (max-width: 768px) {
+      .nav-links, .nav-cta { display: none; }
+    }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .hero {
+      padding: 9rem 0 6rem;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59,130,246,.12) 0%, transparent 70%);
+      position: relative;
+    }
+    .hero-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    @media (max-width: 900px) { .hero-inner { grid-template-columns: 1fr; } }
+    .hero-copy h1 {
+      font-size: clamp(2rem, 4.5vw, 3.2rem); font-weight: 800; line-height: 1.15;
+      margin: 1rem 0; letter-spacing: -.02em;
+    }
+    .hero-copy h1 span { color: var(--accent); }
+    .hero-copy p { color: var(--text-soft); max-width: 480px; margin-bottom: 2rem; }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+    .hero-stats { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .stat strong { display: block; font-size: 1.6rem; font-weight: 800; color: #fff; letter-spacing: -.03em; }
+    .stat span { font-size: .75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; }
+
+    /* ── Dashboard card ──────────────────────────────── */
+    .dashboard-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(59,130,246,.07);
+    }
+    .dashboard-topbar {
+      background: var(--surface2);
+      padding: .85rem 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .dashboard-topbar-left small { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+    .dashboard-topbar-left div { font-size: .875rem; font-weight: 600; margin-top: .1rem; }
+    .live-badge {
+      display: flex; align-items: center; gap: .4rem;
+      font-size: .72rem; color: #22c55e; font-weight: 600;
+      background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.25);
+      padding: .25rem .7rem; border-radius: 2rem;
+    }
+    .live-dot { width: .45rem; height: .45rem; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .dashboard-body { padding: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 500px) { .dashboard-body { grid-template-columns: 1fr; } }
+    .db-panel {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 1rem;
+    }
+    .db-panel-title { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .75rem; }
+    .product-list { list-style: none; display: flex; flex-direction: column; gap: .45rem; }
+    .product-list li {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .8rem; color: var(--text-soft);
+    }
+    .product-list li::before { content: ''; width: .4rem; height: .4rem; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .signal-list { display: flex; flex-direction: column; gap: .65rem; }
+    .signal-label { display: flex; justify-content: space-between; font-size: .75rem; color: var(--text-soft); margin-bottom: .25rem; }
+    .signal-bar-track { height: .35rem; background: var(--surface3); border-radius: 2rem; overflow: hidden; }
+    .signal-bar-fill { height: 100%; border-radius: 2rem; }
+    .fill-green  { background: linear-gradient(90deg, #16a34a, #22c55e); }
+    .fill-yellow { background: linear-gradient(90deg, #ca8a04, #eab308); }
+    .fill-blue   { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+    .new-cards { display: flex; flex-direction: column; gap: .6rem; margin-top: 1rem; }
+    .new-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: .875rem 1rem;
+    }
+    .new-badge { font-size: .65rem; font-weight: 600; color: #f59e0b; text-transform: uppercase; letter-spacing: .07em; margin-bottom: .3rem; }
+    .new-card h4 { font-size: .85rem; font-weight: 700; margin-bottom: .2rem; }
+    .new-card p { font-size: .75rem; color: var(--text-muted); }
+
+    /* ── Feature section ─────────────────────────────── */
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    @media (max-width: 768px) { .features-grid { grid-template-columns: 1fr; } }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2rem;
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover { border-color: rgba(59,130,246,.4); transform: translateY(-3px); }
+    .feature-icon {
+      width: 2.5rem; height: 2.5rem; border-radius: var(--radius-sm);
+      background: var(--accent-glow); border: 1px solid rgba(59,130,246,.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; margin-bottom: 1rem;
+    }
+    .feature-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .5rem; }
+    .feature-card p { font-size: .875rem; color: var(--text-soft); }
+
+    /* ── Products section ────────────────────────────── */
+    .products-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; }
+    @media (max-width: 900px) { .products-layout { grid-template-columns: 1fr; } }
+    .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .products-grid { grid-template-columns: 1fr; } }
+    .product-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.5rem;
+      transition: border-color .2s, transform .2s;
+    }
+    .product-card:hover { border-color: rgba(59,130,246,.35); transform: translateY(-2px); }
+    .product-card h4 { font-size: .95rem; font-weight: 700; margin-bottom: .4rem; }
+    .product-card p { font-size: .82rem; color: var(--text-soft); }
+    .product-sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+    .sidebar-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.5rem;
+    }
+    .sidebar-panel-title { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 1rem; }
+    .roadmap-list { list-style: none; display: flex; flex-direction: column; gap: .5rem; }
+    .roadmap-list li {
+      display: flex; align-items: center; gap: .6rem;
+      font-size: .82rem; color: var(--text-soft);
+    }
+    .roadmap-list li::before { content: '→'; color: var(--accent); font-size: .75rem; }
+
+    /* ── Use cases ───────────────────────────────────── */
+    .usecases-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    @media (max-width: 768px) { .usecases-grid { grid-template-columns: 1fr; } }
+    .usecase-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 2rem;
+      position: relative; overflow: hidden;
+      transition: border-color .2s, transform .2s;
+    }
+    .usecase-card:hover { border-color: rgba(59,130,246,.35); transform: translateY(-3px); }
+    .usecase-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at top left, var(--accent-glow) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .usecase-label { font-size: .72rem; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .75rem; }
+    .usecase-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+    .usecase-card p { font-size: .85rem; color: var(--text-soft); }
+
+    /* ── Brand narrative ─────────────────────────────── */
+    .narrative { background: var(--surface); }
+    .narrative-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    @media (max-width: 900px) { .narrative-inner { grid-template-columns: 1fr; } }
+    .narrative-copy h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 700; margin: .75rem 0 1rem; }
+    .narrative-copy p { color: var(--text-soft); }
+    .narrative-list { list-style: none; display: flex; flex-direction: column; gap: .85rem; }
+    .narrative-list li {
+      display: flex; align-items: center; gap: .75rem;
+      font-size: .9rem; color: var(--text-soft);
+    }
+    .narrative-list li::before {
+      content: '✓'; width: 1.4rem; height: 1.4rem; flex-shrink: 0;
+      border-radius: 50%; background: var(--accent-glow); border: 1px solid rgba(59,130,246,.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .65rem; color: var(--accent); font-weight: 700;
+    }
+
+    /* ── CTA ─────────────────────────────────────────── */
+    .cta {
+      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(59,130,246,.1) 0%, transparent 70%);
+      text-align: center;
+    }
+    .cta h2 { font-size: clamp(1.6rem, 3.5vw, 2.6rem); font-weight: 800; max-width: 640px; margin: .75rem auto 1rem; }
+    .cta p { color: var(--text-soft); max-width: 480px; margin: 0 auto 2.5rem; }
+    .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ── Footer ──────────────────────────────────────── */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 0;
+      text-align: center;
+      font-size: .8rem; color: var(--text-muted);
+    }
+  </style>
+</head>
+<body id="top">
+
+  <!-- ── Navigation ─────────────────────────────────── -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#top" class="nav-brand">
+        <div class="nav-logo">AC</div>
+        <div class="nav-brand-text">
+          <small>Concept website</small>
+          <strong>ACARiS</strong>
+        </div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#experience">Experience</a></li>
+        <li><a href="#products">Products</a></li>
+        <li><a href="#research">Research</a></li>
+        <li><a href="#company">Company</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="#contact" class="btn-ghost">Request prototype</a>
+        <a href="#products" class="btn-primary">Explore the experience</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Hero ───────────────────────────────────────── -->
+  <section class="hero" id="experience">
+    <div class="container">
+      <div class="hero-inner">
+
+        <!-- Copy -->
+        <div class="hero-copy">
+          <span class="tag">AI-powered animal health monitoring</span>
+          <h1>A sharper, more premium digital presence for <span>livestock intelligence.</span></h1>
+          <p>
+            A standalone HTML concept for Acaris, reimagined as a sleek European technology brand
+            focused on intelligent animal monitoring for horses, dairy operations, and research partners.
+          </p>
+          <div class="hero-actions">
+            <a href="#products" class="btn-primary">Explore the experience</a>
+            <a href="#contact" class="btn-ghost">Request prototype</a>
+          </div>
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>7,500+</strong>
+              <span>detected illnesses highlighted</span>
+            </div>
+            <div class="stat">
+              <strong>3</strong>
+              <span>core audience paths</span>
+            </div>
+            <div class="stat">
+              <strong>2024</strong>
+              <span>feature expansion year</span>
+            </div>
+            <div class="stat">
+              <strong>AI</strong>
+              <span>at the center of the platform</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard card -->
+        <div>
+          <div class="dashboard-card">
+            <div class="dashboard-topbar">
+              <div class="dashboard-topbar-left">
+                <small>Dashboard preview</small>
+                <div>Professional monitoring layer</div>
+              </div>
+              <div class="live-badge">
+                <span class="live-dot"></span>
+                Live system
+              </div>
+            </div>
+            <div class="dashboard-body">
+              <div class="db-panel">
+                <div class="db-panel-title">Active product suite</div>
+                <ul class="product-list">
+                  <li>Horse Protector</li>
+                  <li>Birth Alarm</li>
+                  <li>Colic Alarm</li>
+                  <li>Clinic Monitoring</li>
+                </ul>
+              </div>
+              <div class="db-panel">
+                <div class="db-panel-title">Signal quality</div>
+                <div class="signal-list">
+                  <div class="signal-item">
+                    <div class="signal-label"><span>Horse Health</span><span>88%</span></div>
+                    <div class="signal-bar-track"><div class="signal-bar-fill fill-green" style="width:88%"></div></div>
+                  </div>
+                  <div class="signal-item">
+                    <div class="signal-label"><span>Barn Safety</span><span>72%</span></div>
+                    <div class="signal-bar-track"><div class="signal-bar-fill fill-yellow" style="width:72%"></div></div>
+                  </div>
+                  <div class="signal-item">
+                    <div class="signal-label"><span>Birth Alerts</span><span>94%</span></div>
+                    <div class="signal-bar-track"><div class="signal-bar-fill fill-blue" style="width:94%"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="padding:0 1.25rem 1.25rem">
+              <div class="new-cards">
+                <div class="new-card">
+                  <div class="new-badge">New in 2024</div>
+                  <h4>Smart Box</h4>
+                  <p>Premium-ready module presented in the current Acaris roadmap.</p>
+                </div>
+                <div class="new-card">
+                  <div class="new-badge">New in 2024</div>
+                  <h4>Mobile Clinic Version</h4>
+                  <p>Built for modern veterinary and treatment workflows.</p>
+                </div>
+                <div class="new-card">
+                  <div class="new-badge">New in 2024</div>
+                  <h4>Professional Dashboard</h4>
+                  <p>A cleaner operational layer for monitoring and insight.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Positioning ────────────────────────────────── -->
+  <section class="section">
+    <div class="container">
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <span class="tag" style="margin-bottom:.75rem">Positioning</span>
+          <h3>AI-based animal monitoring</h3>
+          <p>Acaris is positioned around simple, effective monitoring for animal health using artificial intelligence and connected technology.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🐴</div>
+          <span class="tag" style="margin-bottom:.75rem">Positioning</span>
+          <h3>Built for horses, dairy, and research</h3>
+          <p>The experience supports horse owners, dairy farmers, and research partners with clear audience-specific pathways.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <span class="tag" style="margin-bottom:.75rem">Positioning</span>
+          <h3>European traction</h3>
+          <p>The homepage frames Acaris as a leading player in Europe and highlights more than 7,500 detected illnesses.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Products ───────────────────────────────────── -->
+  <section class="section" id="products">
+    <div class="container">
+      <div class="section-header">
+        <span class="tag">Product architecture</span>
+        <h2>A modular ecosystem for monitoring, alerts, and insight.</h2>
+      </div>
+      <div class="products-layout">
+        <div class="products-grid">
+          <div class="product-card">
+            <h4>Horse Protector</h4>
+            <p>Reframed as a premium monitoring product with clearer value and cleaner storytelling.</p>
+          </div>
+          <div class="product-card">
+            <h4>Birth Alarm</h4>
+            <p>Designed for high-trust foaling workflows with prominent status and notification patterns.</p>
+          </div>
+          <div class="product-card">
+            <h4>Colic Alarm</h4>
+            <p>A sharper presentation for early warning and ongoing care workflows.</p>
+          </div>
+          <div class="product-card">
+            <h4>Clinic Monitoring</h4>
+            <p>Positioned for vets and clinics with an elevated operational dashboard aesthetic.</p>
+          </div>
+          <div class="product-card">
+            <h4>Safety Alarm</h4>
+            <p>Integrated as part of a broader stable and animal-protection ecosystem.</p>
+          </div>
+          <div class="product-card">
+            <h4>Livestream &amp; Video</h4>
+            <p>Embedded as a visual assurance layer inside a premium software experience.</p>
+          </div>
+        </div>
+        <div class="product-sidebar">
+          <div class="sidebar-panel">
+            <div class="sidebar-panel-title">Roadmap expansion</div>
+            <ul class="roadmap-list">
+              <li>Smart Box</li>
+              <li>Mobile Clinic Version</li>
+              <li>Mobile Tournament Version</li>
+              <li>Foal Monitoring</li>
+              <li>Professional Dashboard</li>
+            </ul>
+          </div>
+          <div class="sidebar-panel">
+            <div class="sidebar-panel-title">Trust layer</div>
+            <p style="font-size:.85rem;color:var(--text-soft)">The concept preserves collaboration themes with veterinarians, researchers, universities, and companies, while giving them a more premium brand context.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Use cases ──────────────────────────────────── -->
+  <section class="section" id="research">
+    <div class="container">
+      <div class="section-header">
+        <span class="tag">Use cases</span>
+        <h2>Designed for every stage of the animal health journey.</h2>
+      </div>
+      <div class="usecases-grid">
+        <div class="usecase-card">
+          <div class="usecase-label">Horse Health</div>
+          <h4>Continuous equine monitoring</h4>
+          <p>From birth and colic alerts to clinic monitoring and live video, the system becomes a full-stack monitoring layer for horses.</p>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-label">Dairy Operations</div>
+          <h4>Monitoring beyond the stable</h4>
+          <p>Acaris can expand its positioning from individual horse care to broader livestock workflows and dairy environments.</p>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-label">Research</div>
+          <h4>Designed for veterinarians and institutions</h4>
+          <p>The site architecture can support research, partnerships, and evidence-building with stronger visual credibility.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Brand narrative ────────────────────────────── -->
+  <section class="section narrative" id="company">
+    <div class="container">
+      <div class="narrative-inner">
+        <div class="narrative-copy">
+          <span class="tag">Brand narrative</span>
+          <h2>From practical product catalogue to confident European tech brand.</h2>
+          <p>This redesign shifts Acaris toward a more modern B2B and innovation-forward identity while preserving the source site's themes: AI, animal health, partnerships, clinical credibility, and product-driven monitoring.</p>
+        </div>
+        <ul class="narrative-list">
+          <li>Cleaner hierarchy</li>
+          <li>Premium product storytelling</li>
+          <li>Sharper conversion pathways</li>
+          <li>Stronger trust and partnership framing</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ────────────────────────────────────────── -->
+  <section class="section cta" id="contact">
+    <div class="container">
+      <span class="tag">Newsletter + contact</span>
+      <h2>Ready to turn Acaris into a category-defining web presence?</h2>
+      <p>
+        This export keeps the original conversion goals—product discovery, support, company trust, and
+        newsletter sign-up—while packaging them in a more contemporary standalone HTML experience.
+      </p>
+      <div class="cta-actions">
+        <a href="#top" class="btn-primary">Launch redesign</a>
+        <a href="mailto:hello@example.com" class="btn-ghost">Request prototype</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container">
+      Standalone HTML export generated from the Acaris-inspired website concept.
+    </div>
+  </footer>
+
+</body>
+</html>
