@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { AppState, Horse, HealthMetric, Alert } from '@/lib/types';
 import { loadState, saveState, addHorse, addHealthMetric, addAlert, updateAlertStatus } from '@/lib/store';
+import { initialHorses, initialHealthMetrics, initialAlerts } from '@/lib/data';
+
+const defaultState: AppState = { horses: initialHorses, healthMetrics: initialHealthMetrics, alerts: initialAlerts };
 
 interface AppContextValue {
   state: AppState;
@@ -16,11 +19,21 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AppState>(() => loadState());
+  // Use default state for SSR; hydrate from localStorage after mount
+  const [state, setState] = useState<AppState>(defaultState);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    saveState(state);
-  }, [state]);
+    // Load from localStorage only after client mount to avoid hydration mismatch
+    setState(loadState());
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      saveState(state);
+    }
+  }, [state, mounted]);
 
   const addNewHorse = useCallback((horse: Omit<Horse, 'id' | 'createdAt' | 'updatedAt'>) => {
     setState((s) => addHorse(s, horse));
